@@ -1,0 +1,5 @@
+(library
+  (name mirage_websocket)
+  (public_name mirage-websocket)
+  (wrapped false)
+  (libraries mirage-http digestif.ocaml mirage-conduit))
