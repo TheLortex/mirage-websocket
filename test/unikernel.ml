@@ -5,15 +5,16 @@ module Main (S: Conduit_mirage.S) = struct
         include HTTP
     end
 
-    module HTTP = HTTP_Make (Mirage_http_cohttp)
-    module Server = HTTP.Server (S)
+    module HTTP_Cohttp = HTTP_Make (Mirage_http_cohttp)
+    module HTTP_AF = HTTP_Make (Mirage_http_httpaf)
 
-    module Websocket = Websocket.Make(HTTP)(S)
+    module WS_A = Websocket.Make(HTTP_AF)(S)
+    module WS_C = Websocket.Make(HTTP_Cohttp)(S)
 
-    module Ws = Websocket.Mirage
 
     let start conduit =
-        Ws.connect conduit >>= fun ws ->
-        Ws.listen ws
+        WS_A.Mirage.connect conduit >>= fun ws_a ->
+        WS_C.Mirage.connect conduit >>= fun ws_c ->
+        Lwt.join [WS_A.Mirage.listen (`TCP 8000) ws_a; WS_C.Mirage.listen (`TCP 8001) ws_c]
 
 end

@@ -320,12 +320,13 @@ module Make (HTTP : Mirage_http.S with type 'a io = 'a Lwt.t) (CON: Conduit_mira
         HTTP.HTTP.Headers.of_list
           (("Upgrade", "websocket") ::
           ("Connection", "Upgrade") ::
+          ("Transfer-Encoding", "unknown") ::
           ("Sec-WebSocket-Accept", hash) ::
           subprotocol)
       in
       let rsp =
           HTTP.Response.v
-            ~body:(fun () -> Lwt.return None)
+            ~body:(fun () -> Lwt.return_none)
             response_headers
             101
       in
@@ -354,7 +355,9 @@ module Make (HTTP : Mirage_http.S with type 'a io = 'a Lwt.t) (CON: Conduit_mira
       | Nonctrl _ -> Server.IO.return ()
       | Continuation
       | Text
-      | Binary -> Connection.send conn (Frame.create ~opcode:Text ~content:"ok" ())
+      | Binary ->
+        Logs.info (fun x -> x "frame: %s\n" frame.Frame.content);
+        Connection.send conn (Frame.create ~opcode:Text ~content:"ok" ())
 
     let handle_conn conn =
       let rec loop () =
@@ -370,9 +373,9 @@ module Make (HTTP : Mirage_http.S with type 'a io = 'a Lwt.t) (CON: Conduit_mira
     let conn_handler =
       Server.create_connection_handler callback (fun _ -> Lwt.return_unit)
 
-    let listen t =
+    let listen endp t =
       conn_handler >>= fun x ->
-      Server.listen t (`TCP 8088) x
+      Server.listen t endp x
 
     let connect conduit = Server.connect conduit
   end

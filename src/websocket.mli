@@ -80,7 +80,7 @@ module Make (HTTP : Mirage_http.S with type 'a io = 'a Lwt.t) (CON: Conduit_mira
   module Mirage: sig
     type t
 
-    val listen : t -> unit Lwt.t
+    val listen : Conduit_mirage.server -> t -> unit Lwt.t
     val connect : CON.t -> t Lwt.t
   end
 end
